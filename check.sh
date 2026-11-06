@@ -118,7 +118,31 @@ def check_ver():
     print('  最近改动: %s' % rel(newest[1]))
 
 
-CHECKS = {'js': check_js, 'assets': check_assets, 'l10n': check_l10n, 'ver': check_ver}
+def check_core():
+    """motion-core 词表自检：同级目录有 motion-core 仓库就跑它的 lint，
+       并确认 assets/core.js 与它的构建产物同步。"""
+    core = os.path.join(ROOT, '..', 'motion-core')
+    lint = os.path.join(core, 'bin', 'motion-lint.js')
+    if not os.path.exists(lint):
+        print('  跳过（未找到 ../motion-core）')
+        return
+    r = subprocess.run(['node', lint, os.path.join(core, 'vocab')],
+                       capture_output=True, text=True, encoding='utf-8', errors='replace')
+    for line in (r.stdout or '').splitlines():
+        if line.strip():
+            print('  ' + line)
+    if r.returncode:
+        fails.append('motion-core 词表 lint 失败（见上）')
+
+    dist = os.path.join(core, 'dist', 'core.umd.js')
+    target = os.path.join(ROOT, 'assets', 'core.js')
+    if os.path.exists(dist) and os.path.exists(target):
+        if open(dist, 'rb').read() != open(target, 'rb').read():
+            fails.append('assets/core.js 与 motion-core/dist/core.umd.js 不同步'
+                         '（在 motion-core 里跑 node scripts/build-umd.mjs 后拷贝过来）')
+
+
+CHECKS = {'js': check_js, 'assets': check_assets, 'l10n': check_l10n, 'ver': check_ver, 'core': check_core}
 for name in (sys.argv[1:] or CHECKS.keys()):
     if name not in CHECKS:
         print('未知项: %s（可选 %s）' % (name, ' '.join(CHECKS)))

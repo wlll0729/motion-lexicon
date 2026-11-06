@@ -4,7 +4,9 @@
   'use strict';
   const LIST = [
     { key: 'css', label: 'CSS', zh: '原生关键帧与过渡', en: 'Native keyframes & transitions' },
-    { key: 'waapi', label: 'WAAPI', zh: 'JavaScript 浏览器动画 API', en: 'JavaScript Web Animations API' }
+    { key: 'waapi', label: 'WAAPI', zh: 'JavaScript 浏览器动画 API', en: 'JavaScript Web Animations API' },
+    { key: 'film-mo', label: '影片 MO', zh: 'Canvas 影片时间库（MO.byName）', en: 'Canvas film timeline (MO.byName)' },
+    { key: 'film-rk', label: '短片 RK', zh: '知识短片渲染 API（E.byName）', en: 'Explainer render API (E.byName)' }
   ];
   let current = 'css';
   const esc = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -107,7 +109,17 @@
     scripts.push('document.querySelector("#replay").addEventListener("click", replay);\nreplay();');
     return '<!doctype html>\n<html lang="zh-CN">\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width,initial-scale=1">\n<title>'+esc(term.zh)+'</title>\n<style>\n* { box-sizing: border-box; }\nbody { margin: 0; padding: 32px; background: #f4f0e8; color: #29251f; font: 16px system-ui; }\nmain { max-width: 720px; margin: auto; }\nh1 { font-size: 24px; } h2 { font-size: 14px; font-weight: 500; }\n.stage { display: flex; justify-content: center; align-items: center; gap: 12px; min-height: 240px; flex-wrap: wrap; }\n.object { flex: 0 0 auto; width: 80px; height: 64px; border: 0; border-radius: 14px; background: linear-gradient(135deg,#dfa66f,#92563c); color: white; font: 14px system-ui; cursor: pointer; }\n.object:focus-visible { outline: 2px solid #754e37; outline-offset: 5px; }\n#replay { padding: 10px 20px; border: 1px solid #bba998; border-radius: 24px; background: white; cursor: pointer; }\n'+css.join('\n')+'\n</style>\n<main><h1>'+esc(term.zh)+'</h1>\n'+markup.join('\n')+'\n<button id="replay" type="button">重新播放</button></main>\n<script>\n'+scripts.join('\n')+'\n</script>\n</html>';
   }
-  function codeFor(term,overrides) { const groups = specs(term,overrides); return groups ? generate(term,groups) : ''; }
+  function codeFor(term,overrides) {
+    /* 影片目标走 motion-core：词表和 MotionSpec 都在 core 里 */
+    if (current === 'film-mo' || current === 'film-rk') {
+      const MC = window.MC;
+      const ct = MC && MC.termsVocab ? MC.termsVocab.terms.find(function (t) { return t.id === term.id; }) : null;
+      if (!ct || !ct.spec) return '';
+      const r = MC.export(ct.spec, current, overrides || {});
+      return r.code || '';
+    }
+    const groups = specs(term,overrides); return groups ? generate(term,groups) : '';
+  }
   function panelHTML(term,overrides) {
     const code = codeFor(term,overrides);
     if (!code) return '';
@@ -133,5 +145,22 @@
       button.querySelector('small').textContent = en()?d.en:d.zh;
     });
   }
-  window.DIALECTS = {list:LIST,get current(){return current;},set(key){if(LIST.some(d=>d.key===key))current=key;},codeFor,panelHTML,refreshPanel,compilable:term=>!!specs(term),status:term=>specs(term)?'translated':'unavailable'};
+  /* 能力判断：影片目标读 motion-core 词表里的 platforms 声明；
+     CSS / WAAPI 仍走本文件的严格校验（它会真的跑一遍关键帧解析）。 */
+  function corePlatforms(term) {
+    const MC = window.MC;
+    if (!MC || !MC.termsVocab || !MC.termsVocab.terms) return null;
+    const ct = MC.termsVocab.terms.find(function (t) { return t.id === term.id; });
+    return ct ? (ct.platforms || null) : null;
+  }
+  function compilable(term) {
+    if (current === 'film-mo' || current === 'film-rk') {
+      const p = corePlatforms(term);
+      return !!(p && p[current] && p[current] !== 'unavailable');
+    }
+    return !!specs(term);
+  }
+  function status(term) { return compilable(term) ? 'translated' : 'unavailable'; }
+
+  window.DIALECTS = {list:LIST,get current(){return current;},set(key){if(LIST.some(d=>d.key===key))current=key;},codeFor,panelHTML,refreshPanel,compilable,status};
 })();

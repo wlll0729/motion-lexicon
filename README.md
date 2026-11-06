@@ -99,3 +99,16 @@ python3 check.sh
 ## 参与修改
 
 欢迎提交术语修正、演示改进和翻译补充。新增术语时，请同时补齐中文、英文、演示说明和对应的 `data-l10n` 词条，并在提交前运行 `python3 check.sh`。
+
+## motion-core 接入（本地）
+
+本站已接入 [motion-core](https://github.com/pursuerlin/motion-lexicon) 的词表内核（`assets/core.js`）：
+
+- `assets/ease.js` 改为从 core 的曲线注册表构建，曲线从 14 条扩到 **56 条**（新增 `k75` / `longTail` / `appleOut` / `spring` / `settle` 等）；旧键名（`customBezier` / `easeInSine` …）保留兼容。
+- 缓动实验室的导出 tab 从 8 个扩到 **10 个**，新增 **「影片 / Canvas（MO）」** 与 **「知识短片（RK）」**，可直接产出 film 工程用的 `MO.byName(...)` 代码。
+- 术语详情页的「代码写法」菜单新增影片目标，能力判断改读 core 词表里的 `platforms` 声明。
+- `check.sh` 增加 `core` 检查项：跑 core 的词表 lint，并校验 `assets/core.js` 与 core 的构建产物同步。
+
+接入只新增/替换了 `assets/core.js`、`assets/ease.js`、`assets/lab.js`、`assets/dialects.js`、`check.sh`，
+**没有改动任何术语数据与既有引擎**。
+
