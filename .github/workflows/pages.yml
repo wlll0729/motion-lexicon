@@ -15,7 +15,38 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # 发布前自检：自检不过就不部署。
+  # 原来这个工作流直接 upload + deploy，check.sh 形同虚设——这一条补上。
+  check:
+    name: 发布前自检
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: check.sh（JS 语法 / 静态资源 / 本地化 / 版本一致性 / motion-core 词表）
+        run: python3 check.sh
+
+      - name: 测试
+        run: |
+          fail=0
+          for t in tests/*.test.cjs; do
+            echo "=== $t ==="
+            node "$t" || fail=1
+          done
+          exit $fail
+
   deploy:
+    name: 部署到 GitHub Pages
+    needs: check
     runs-on: ubuntu-latest
     environment:
       name: github-pages
