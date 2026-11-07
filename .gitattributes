@@ -1,0 +1,12 @@
+# 统一换行符：Windows 上编辑、Linux 上部署，换行漂移会让 diff 误报
+* text=auto eol=lf
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.webp  binary
+*.woff  binary
+*.woff2 binary
+*.ttf   binary
+*.mp4   binary
+*.wav   binary
