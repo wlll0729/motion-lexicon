@@ -56,6 +56,9 @@ jobs:
         uses: actions/checkout@v4
       - name: Setup Pages
         uses: actions/configure-pages@v5
+        with:
+          # 自动启用 Pages（仓库刚建、或 Pages 被关掉时能自愈）
+          enablement: true
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
